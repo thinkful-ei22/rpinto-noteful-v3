@@ -17,7 +17,7 @@ const expect = chai.expect;
 chai.use(chaiHttp);
 
 //describe() wraps your tests
-describe('hooks', function() {
+describe('hooks', function () {
   // configure the Mocha hooks manage the database during the tests
   before(function () {
     return mongoose.connect(TEST_MONGODB_URI)
@@ -68,18 +68,17 @@ describe('hooks', function() {
     // 1) Call the database **and** the API
     // 2) Wait for both promises to resolve using `Promise.all`
     return Promise.all([
-        Note.find(),
-        chai.request(app).get('/api/notes')
-      ])
+      Note.find(),
+      chai.request(app).get('/api/notes')
+    ])
       // 3) then compare database results to API response
-        .then(([data, res]) => {
-          expect(res).to.have.status(200);
-          expect(res).to.be.json;
-          expect(res.body).to.be.a('array');
-          expect(res.body).to.have.length(data.length);
-        });
+      .then(([data, res]) => {
+        expect(res).to.have.status(200);
+        expect(res).to.be.json;
+        expect(res.body).to.be.a('array');
+        expect(res.body).to.have.length(data.length);
+      });
   });
-
   //_________________POST Tests_________________
   //Serial Request - Call API then call DB then compare
   describe('POST /api/notes', function () {
@@ -115,5 +114,62 @@ describe('hooks', function() {
     });
   });
   //___________________PUT Tests_____________________
+  describe('PUT endpoint', function () {
+    // strategy:
+    //  1. Get an existing note from db
+    //  2. Make a PUT request to update that note
+    //  3. Prove note returned by request contains data we sent
+    //  4. Prove note in db is correctly updated
+    it('should update fields you send over', function () {
+      const updateData = {
+        title: "a great new note",
+        content: "about how wonderful today is!"
+      };
+
+      return Note
+        .findOne()
+        .then(function (note) {
+          updateData.id = note.id;
+
+          return chai.request(app)
+            .put(`/notes/${note.id}`)
+            .send(updateData);
+        })
+        .then(function (res) {
+          expect(res).to.have.status(204);
+
+          return Note.findById(updateData.id);
+        })
+        .then(function(note) {
+          expect(note.title).to.equal(updateData.title);
+          expect(note.content).to.equal(updateData.content);
+        });
+    });
+  })
   //__________________DELETE Tests___________________
+  describe('DELETE endpoint', function() {
+    // strategy:
+    //  1. get a note
+    //  2. make a DELETE request for that note's
+    //  3. assert that response has right status code
+    //  4. prove that the note with the id doesn't exist in db anymore
+    it('delete a restaurant by id', function() {
+      
+      let note;
+
+      return Note
+      .findOne()
+      .then(function(_note) {  // ASK JUANCARLOS -- why do we pass this in with an underscore??
+        note = _note;
+        return chai.request(app).delete(`/notes/${note.id}`);
+      })
+      .then(function(res) {
+        expect(res).to.have.status(204);
+        return Note.findById(note.id);
+      })
+      .then(function(_note) {
+        expect(_note).to.be.null;
+      })
+    });
+  });
 });
