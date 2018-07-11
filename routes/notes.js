@@ -26,25 +26,49 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-
-  console.log('Create a Note');
-  res.location('path/to/new/document').status(201).json({ id: 2, title: 'Temp 2' });
-
+  Note
+    .create({
+      title: req.body.title,
+      content: req.body.content
+    })
+    .then(newNote => res.json(newNote))
 });
+
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
 router.put('/:id', (req, res, next) => {
+  if (!(req.params.id && req.body.id && req.params.id === req.body.id)) {
+    const message = (
+      `Request path id (${req.params.id}) and request body id ` +
+      `(${req.body.id}) must match`);
+    console.error(message);
 
-  console.log('Update a Note');
-  res.json({ id: 1, title: 'Updated Temp 1' });
+    return res.status(400).json({message: message});
+  }
 
+  const toUpdate = {};
+  const updateableFields = ['title', 'content'];
+
+  updateableFields.forEach(field => {
+    if (field in req.body) {
+      toUpdate[field] = req.body[field];
+    }
+  });
+
+  Note
+    .findByIdAndUpdate(req.params.id,
+      { $set: toUpdate },
+      { new: true }
+    )
+    .then(updatedNote => res.json(updatedNote))
 });
+
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
-
-  console.log('Delete a Note');
-  res.status(204).end();
+  Note
+  .findByIdAndRemove(req.params.id)
+  .then(deletedNote => res.json(deletedNote).end())
 });
 
 module.exports = router;
