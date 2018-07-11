@@ -4,12 +4,9 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
-
 const app = require('../server');
 const { TEST_MONGODB_URI } = require('../config');
-
 const Note = require('../models/notes');
-
 const seedNotes = require('../db/seed/notes');
 
 //configure expect as your assertion library and load chai-http with chai.use()
@@ -17,7 +14,7 @@ const expect = chai.expect;
 chai.use(chaiHttp);
 
 //describe() wraps your tests
-describe('hooks', function () {
+describe('noteful test hooks', ()=>{
   // configure the Mocha hooks manage the database during the tests
   before(function () {
     return mongoose.connect(TEST_MONGODB_URI)
@@ -37,8 +34,9 @@ describe('hooks', function () {
   });
   //______________GET Tests______________
   //Serial Request - Call DB then call API then compare:
-  describe('GET /api/notes/:id', function () {
-    it('should return correct note', function () {
+  describe('GET by id, GET all', ()=>{
+  //GET by id
+    it('should return correct note', ()=>{
       let data;
       // 1) First, call the database
       return Note.findOne()
@@ -50,8 +48,7 @@ describe('hooks', function () {
         .then((res) => {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
-
-          expect(res.body).to.be.an('object');
+          expect(res.body).to.be.a('object');
           expect(res.body).to.have.keys('id', 'title', 'content', 'createdAt', 'updatedAt');
 
           // 3) then compare database results to API response
@@ -63,22 +60,19 @@ describe('hooks', function () {
         });
     });
   })
-  //Parallel Request - Call both DB and API, then compare:
-  describe('GET /api/notes', function () {
-    // 1) Call the database **and** the API
-    // 2) Wait for both promises to resolve using `Promise.all`
-    return Promise.all([
-      Note.find(),
-      chai.request(app).get('/api/notes')
-    ])
-      // 3) then compare database results to API response
-      .then(([data, res]) => {
+  //GET all notes
+  it('should get all notes', ()=>{
+    return chai.request(app)
+      .get('/api/notes')
+      .then( res => {
         expect(res).to.have.status(200);
         expect(res).to.be.json;
         expect(res.body).to.be.a('array');
-        expect(res.body).to.have.length(data.length);
+        return Note.find()
+          .then(data => {
+            expect(res.body).to.have.length(data.length);
+          });  
       });
-  });
   //_________________POST Tests_________________
   //Serial Request - Call API then call DB then compare
   describe('POST /api/notes', function () {
