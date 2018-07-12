@@ -156,7 +156,7 @@ describe('noteful test hooks', () => {
       let data;
       return Note
         .findOne()
-        .then(_data => {  // ASK JUANCARLOS -- why do we pass this in with an underscore??
+        .then(_data => {
           data = _data;
           return chai.request(app).delete(`/api/notes/${data.id}`);
         })

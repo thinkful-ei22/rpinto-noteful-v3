@@ -31,7 +31,7 @@ router.post('/', (req, res, next) => {
       title: req.body.title,
       content: req.body.content
     })
-    .then(newNote => res.json(newNote))
+    .then(newNote => res.location(`${req.originalUrl}${newNote.id}`).status(201).json(newNote))
 });
 
 
@@ -68,7 +68,7 @@ router.put('/:id', (req, res, next) => {
 router.delete('/:id', (req, res, next) => {
   Note
   .findByIdAndRemove(req.params.id)
-  .then(deletedNote => res.json(deletedNote).end())
+  .then(deletedNote => res.status(204).json(deletedNote).end())
 });
 
 module.exports = router;
