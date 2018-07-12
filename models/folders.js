@@ -5,9 +5,9 @@ const folderSchema = new mongoose.Schema({
 });
 
 // Add `createdAt` and `updatedAt` fields
-noteSchema.set('timestamps', true);
+folderSchema.set('timestamps', true);
 
-noteSchema.set('toObject', {
+folderSchema.set('toObject', {
   virtuals: true,     // include built-in virtual `id`
   versionKey: false,  // remove `__v` version key
   transform: (doc, ret) => {
