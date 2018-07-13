@@ -62,6 +62,66 @@ router.post('/', (req, res, next)=>{
 });
 
 
-// PUT folders by id to update a folder name, Validate the incoming body has a name field, Validate the id is a Mongo ObjectId, Catch duplicate key error code 11000 and respond with a helpful error message
+// PUT folders by id to update a folder name
+router.put('/:id', (req, res, next) => {
+  //Validate the id is a mongo object id,
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const err = new Error('`id` field is not valid');
+    err.status = 400;
+    return next(err);
+  }
+  //Validate there is a name in name field
+  if (!req.body.name) {
+    const err = new Error('Missing `name` field');
+    err.status = 400;
+    return next(err);
+  }
 
-// DELETE /folders by id which deletes the folder AND the related notes, Respond with a 204 status
+
+  Folder.findByIdAndUpdate(id, req.body, { new: true })
+    .then(result => {
+      if (result) {
+        res.json(result);
+      } else {
+        next();
+      }
+    })
+    //Catch duplicate key error code 11000 and respond with a helpful error message
+    .catch(err => {
+      if (err.code === 11000) {
+        err = new Error('No duplicate File names allowed');
+        err.status = 400;
+      }
+      next(err);
+    });
+});
+// DELETE folders by id which deletes the folder AND the related notes, Respond with a 204 status
+
+router.delete('/:id', (req, res, next) => {
+  const { id } = req.params;
+
+  
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    const err = new Error('`id` is not valid');
+    err.status = 400;
+    return next(err);
+  }
+
+  // ON DELETE SET NULL equivalent
+  const folderRemovePromise = Folder.findByIdAndRemove(req.params.id);
+
+  const noteRemovePromise = Note.updateMany(
+    { folderId: req.params.id},
+    { $unset: { folderId: '' } }
+  );
+
+  Promise.all([folderRemovePromise, noteRemovePromise])
+    .then(() => {
+      res.status(204).end();
+    })
+    .catch(err => {
+      next(err);
+    });
+});
+
+module.exports = router;
