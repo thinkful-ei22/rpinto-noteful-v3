@@ -4,20 +4,20 @@ const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 
-const Folder = require('../models/folders');
+const Tag = require('../models/tags');
 
-// GET all folders, Sort by name
+// GET all tags, Sort by name
 
 router.get('/', (req, res, next) => {
-  Folder
+  Tag
     .find()
     .sort('name')
-    .then(folder => {
-      res.json(folder);
+    .then(tag => {
+      res.json(tag);
     });
 });
 
-// GET folders by id, Validate the id is a Mongo ObjectId, Conditionally return a 200 response or a 404 Not Found
+// GET tags by id, Validate the id is a Mongo ObjectId, Conditionally return a 200 response or a 404 Not Found
 
 router.get('/:id', (req, res, next) => {
 
@@ -27,36 +27,36 @@ router.get('/:id', (req, res, next) => {
     return next(err);
   }
 
-  Folder
+  Tag
     .findById(req.params.id)
-    .then(folder => {
-      res.json(folder);
+    .then(tag => {
+      res.json(tag);
     })
     .catch(err => {
       next(err);
     });
 });
 
-// POST folders to create a new folder
+// POST tags to create a new tag
 
 router.post('/', (req, res, next) => {
   //Validate the incoming body has a name field
   if (!req.body.name) {
-    const err = new Error('You must make a name for a folder');
+    const err = new Error('You must make a name for a tag');
     err.status = 400;
     return next(err);
   }
 
-  Folder
+  Tag
     .create({
       name: req.body.name
     })
     //Respond with a 201 status and location header
-    .then(newFolder => res.location(`${req.originalUrl}${newFolder.id}`).status(201).json(newFolder))
+    .then(newTag => res.location(`${req.originalUrl}${newTag.id}`).status(201).json(newTag))
     //Catch duplicate key error code 11000 and respond with a helpful error message
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('The folder name already exists');
+        err = new Error('The tag name already exists');
         err.status = 400;
       }
       next(err);
@@ -64,7 +64,7 @@ router.post('/', (req, res, next) => {
 });
 
 
-// PUT folders by id to update a folder name
+// PUT tags by id to update a tag name
 router.put('/:id', (req, res, next) => {
   //Validate the id is a mongo object id,
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -81,22 +81,22 @@ router.put('/:id', (req, res, next) => {
 
   const toUpdate = {};
 
-  Folder
+  Tag
     .findByIdAndUpdate(req.params.id,
       { $set: toUpdate },
       { new: true }
     )
-    .then( updatedFolder => res.json(updatedFolder))
+    .then( updatedTag => res.json(updatedTag))
   //Catch duplicate key error code 11000 and respond with a helpful error message
     .catch(err => {
       if (err.code === 11000) {
-        err = new Error('No duplicate File names allowed');
+        err = new Error('No duplicate tag names allowed');
         err.status = 400;
       }
       next(err);
     });
 });
-// DELETE folders by id which deletes the folder AND the related notes, Respond with a 204 status
+// DELETE tags by id which deletes the tag AND the related notes, Respond with a 204 status
 
 router.delete('/:id', (req, res, next) => {
   const { id } = req.params;
@@ -108,21 +108,21 @@ router.delete('/:id', (req, res, next) => {
     return next(err);
   }
 
-  // ON DELETE SET NULL equivalent
-  const folderRemovePromise = Folder.findByIdAndRemove(req.params.id);
+  // // ON DELETE SET NULL equivalent
+  // const folderRemovePromise = Folder.findByIdAndRemove(req.params.id);
 
-  const noteRemovePromise = Note.updateMany(
-    { folderId: req.params.id },
-    { $unset: { folderId: '' } }
-  );
+  // const noteRemovePromise = Note.updateMany(
+  //   { folderId: req.params.id },
+  //   { $unset: { folderId: '' } }
+  // );
 
-  Promise.all([folderRemovePromise, noteRemovePromise])
-    .then(() => {
-      res.status(204).end();
-    })
-    .catch(err => {
-      next(err);
-    });
+  // Promise.all([folderRemovePromise, noteRemovePromise])
+  //   .then(() => {
+  //     res.status(204).end();
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   });
 });
 
 module.exports = router;
