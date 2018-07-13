@@ -14,7 +14,7 @@ const expect = chai.expect;
 chai.use(chaiHttp);
 
 //describe() wraps your tests
-describe('noteful test hooks', () => {
+describe('notes test hooks', () => {
   // configure the Mocha hooks manage the database during the tests
   before(function () {
     return mongoose.connect(TEST_MONGODB_URI)
