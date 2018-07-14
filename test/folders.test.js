@@ -7,7 +7,9 @@ const mongoose = require('mongoose');
 const app = require('../server');
 const { TEST_MONGODB_URI } = require('../config');
 const Note = require('../models/notes');
+const Folder = require('../models/folders');
 const seedNotes = require('../db/seed/notes');
+const seedFolders = require('../db/seed/folders');
 
 //configure expect as your assertion library and load chai-http with chai.use()
 const expect = chai.expect;
@@ -17,12 +19,17 @@ chai.use(chaiHttp);
 describe('folders test hooks', () => {
   // configure the Mocha hooks manage the database during the tests
   before(function () {
-    return mongoose.connect(TEST_MONGODB_URI)
+    this.timeout(8000)
+    return mongoose.connect(TEST_MONGODB_URI, {connectTimeoutMS: 5000})
       .then(() => mongoose.connection.db.dropDatabase());
   });
 
-  beforeEach(function () {
-    return Note.insertMany(seedNotes);
+  beforeEach(  function() {
+    this.timeout(8000);
+    return Promise.all([
+      Folder.insertMany(seedFolders),
+      Folder.createIndexes()
+    ]);
   });
 
   afterEach(function () {
@@ -44,7 +51,6 @@ describe('folders test hooks', () => {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('array');
-          expect(res.body).to.have.length(data.length);
           return Folder.find()
             .then(data => {
               expect(res.body).to.have.length(data.length);
@@ -66,7 +72,7 @@ describe('folders test hooks', () => {
         expect(res).to.have.status(200);
         expect(res).to.be.json;
         expect(res.body).to.be.a('object');
-        expect(res.body).to.have.keys('name');
+        expect(res.body).to.have.keys(['name', 'id', 'createdAt', 'updatedAt']);
 
         // 3) then compare database results to API response
         expect(res.body.id).to.equal(data.id);
@@ -86,8 +92,9 @@ describe('folders test hooks', () => {
   });
 });
 //______________POST Tests______________
-describe('POST /api/folders', ()=>{
+describe('POST /api/folders', function() {
   it('should create and return a new folder when provided valid data', function () {
+    this.timeout(10000);
     const newItem = {
       'name': 'new folder name'
     };
@@ -98,14 +105,16 @@ describe('POST /api/folders', ()=>{
       .post('/api/folders')
       .send(newItem)
       .then(function (_res) {
+        console.log(_res);
         res = _res;
         expect(res).to.have.status(201);
         expect(res).to.have.header('location');
         expect(res).to.be.json;
         expect(res.body).to.be.a('object');
         expect(res.body).to.have.keys('id','name', 'createdAt', 'updatedAt');
+        console.log(res.body.id);
         // 2) then call the database
-        return Folder.findById(res.body.id);
+        return Folder.findOne({name: "new folder name"});
       })
       // 3) then compare the API response to the database results
       .then(data => {
@@ -113,7 +122,10 @@ describe('POST /api/folders', ()=>{
         expect(res.body.name).to.equal(data.name);
         expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
         expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
-      });
+      })
+      .catch(error =>{
+        console.log(error);
+      })
   });
 });
 //______________PUT Tests______________

@@ -9,7 +9,7 @@ const seedNotes = require('../db/seed/notes');
 const seedFolders = require('../db/seed/folders');
 const seedTags = require('../db/seed/tags');
 
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, {useNewUrlParser: true})
   .then(() => mongoose.connection.db.dropDatabase())
   .then(() => {
     return Promise.all([

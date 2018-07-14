@@ -22,7 +22,7 @@ router.get('/', (req, res, next) => {
 router.get('/:id', (req, res, next) => {
 
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    const err = new Error('Invalid field entry');
+    const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
@@ -116,13 +116,23 @@ router.delete('/:id', (req, res, next) => {
     { $unset: { folderId: '' } }
   );
 
-  Promise.all([folderRemovePromise, noteRemovePromise])
-    .then(() => {
-      res.status(204).end();
-    })
-    .catch(err => {
-      next(err);
-    });
+  folderRemovePromise.then(()=>{
+    return noteRemovePromise;
+  }).then(()=>{
+    res.status(204).end();
+  })
+  .catch(err => {
+    next(err);
+  })
+  
+  // Example of parallel promises, similar to series promise above
+  // Promise.all([folderRemovePromise, noteRemovePromise])
+  //   .then(() => {
+  //     res.status(204).end();
+  //   })
+  //   .catch(err => {
+  //     next(err);
+  //   });
 });
 
 module.exports = router;

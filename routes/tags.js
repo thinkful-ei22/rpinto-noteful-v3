@@ -108,21 +108,23 @@ router.delete('/:id', (req, res, next) => {
     return next(err);
   }
 
-  // // ON DELETE SET NULL equivalent
-  // const folderRemovePromise = Folder.findByIdAndRemove(req.params.id);
+  // ON DELETE SET NULL equivalent
+  const folderRemovePromise = Folder.findByIdAndRemove(req.params.id);
 
-  // const noteRemovePromise = Note.updateMany(
-  //   { folderId: req.params.id },
-  //   { $unset: { folderId: '' } }
-  // );
+  const noteRemovePromise = Note.updateMany(
+    { folderId: req.params.id },
+    { $unset: { folderId: '' } },
+    { $unset: { tagId: ''} },
+    { $pull: { tagId } }
+  );
 
-  // Promise.all([folderRemovePromise, noteRemovePromise])
-  //   .then(() => {
-  //     res.status(204).end();
-  //   })
-  //   .catch(err => {
-  //     next(err);
-  //   });
+  Promise.all([folderRemovePromise, noteRemovePromise])
+    .then(() => {
+      res.status(204).end();
+    })
+    .catch(err => {
+      next(err);
+    });
 });
 
 module.exports = router;
