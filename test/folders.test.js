@@ -16,16 +16,16 @@ const expect = chai.expect;
 chai.use(chaiHttp);
 
 //describe() wraps your tests
-describe('folders test hooks', () => {
+describe('folders test hooks', function () {
   // configure the Mocha hooks manage the database during the tests
   before(function () {
-    this.timeout(8000)
-    return mongoose.connect(TEST_MONGODB_URI, {connectTimeoutMS: 5000})
+    console.log('before')
+    return mongoose.connect(TEST_MONGODB_URI, { connectTimeoutMS: 5000 })
       .then(() => mongoose.connection.db.dropDatabase());
   });
 
-  beforeEach(  function() {
-    this.timeout(8000);
+  beforeEach(function () {
+    console.log('beforeEach')
     return Promise.all([
       Folder.insertMany(seedFolders),
       Folder.createIndexes()
@@ -57,124 +57,125 @@ describe('folders test hooks', () => {
             });
         });
     });
-  });
-  //GET by id
-  it('should return folder with correct id', () => {
-    let data;
-    // 1) First, call the database
-    return Folder.findOne()
-      .then(_data => {
-        data = _data;
-        // 2) then call the API with the ID
-        return chai.request(app).get(`/api/folders/${data.id}`);
-      })
-      .then((res) => {
-        expect(res).to.have.status(200);
-        expect(res).to.be.json;
-        expect(res.body).to.be.a('object');
-        expect(res.body).to.have.keys(['name', 'id', 'createdAt', 'updatedAt']);
 
-        // 3) then compare database results to API response
-        expect(res.body.id).to.equal(data.id);
-        expect(res.body.name).to.equal(data.name);
-        expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
-        expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
-      });
-  });
-  //respond with 400 for invalid id
-  it('should respond with a 400 for an invalid id', function () {
-    return chai.request(app)
-      .get('/api/folders/NOT-A-VALID-ID')
-      .then(res => {
-        expect(res).to.have.status(400);
-        expect(res.body.message).to.eq('The `id` is not valid');
-      });
-  });
-});
-//______________POST Tests______________
-describe('POST /api/folders', function() {
-  it('should create and return a new folder when provided valid data', function () {
-    this.timeout(10000);
-    const newItem = {
-      'name': 'new folder name'
-    };
+    //GET by id
+    it('should return folder with correct id', () => {
+      let data;
+      // 1) First, call the database
+      return Folder.findOne()
+        .then(_data => {
+          data = _data;
+          // 2) then call the API with the ID
+          return chai.request(app).get(`/api/folders/${data.id}`);
+        })
+        .then((res) => {
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body).to.have.keys(['name', 'id', 'createdAt', 'updatedAt']);
 
-    let res;
-    // 1) First, call the API
-    return chai.request(app)
-      .post('/api/folders')
-      .send(newItem)
-      .then(function (_res) {
-        console.log(_res);
-        res = _res;
-        expect(res).to.have.status(201);
-        expect(res).to.have.header('location');
-        expect(res).to.be.json;
-        expect(res.body).to.be.a('object');
-        expect(res.body).to.have.keys('id','name', 'createdAt', 'updatedAt');
-        console.log(res.body.id);
-        // 2) then call the database
-        return Folder.findOne({name: "new folder name"});
-      })
-      // 3) then compare the API response to the database results
-      .then(data => {
-        expect(res.body.id).to.equal(data.id);
-        expect(res.body.name).to.equal(data.name);
-        expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
-        expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
-      })
-      .catch(error =>{
-        console.log(error);
-      })
+          // 3) then compare database results to API response
+          expect(res.body.id).to.equal(data.id);
+          expect(res.body.name).to.equal(data.name);
+          expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
+          expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
+        });
+    });
+    //respond with 400 for invalid id
+    it('should respond with a 400 for an invalid id', function () {
+      return chai.request(app)
+        .get('/api/folders/NOT-A-VALID-ID')
+        .then(res => {
+          expect(res).to.have.status(400);
+          expect(res.body.message).to.eq('The `id` is not valid');
+        });
+    });
   });
-});
-//______________PUT Tests______________
-describe('PUT /api/folders/:id', () => {
-  it('should update folder you send over, and return with new data', function () {
-    const updatedFolder = {
-      name: "This is an updated folder name",
-    };
+  //______________POST Tests______________
+  describe('POST /api/folders', function () {
+    it.only('should create and return a new folder when provided valid data', function () {
+      console.log('post api folders');
+      const newItem = {
+        'name': 'new folder name'
+      };
 
-    return Folder
-      .findOne()
-      .then(data => {
-        updatedFolder.id = data.id;
-
-        return chai.request(app)
-        .put(`/api/notes/${data.id}`)
-        .send(updatedFolder);
-      })
-      .then((res) =>{
-        expect(res).to.have.status(200);
-        expect(res).to.be.json;
-        expect(res.body).to.be.a('object');
-        expect(res.body).to.have.keys('id', 'name', 'createdAt', 'updatedAt');
-        return Folder.findbyId(updatedFolder.id);
-      })
-      .then(data => {
-        expect(updatedFolder.id).to.equal(data.id);
-        expect(updatedFolder.name).to.equal(data.name);
-      });   
+      let res;
+      // 1) First, call the API
+      return chai.request(app)
+        .post('/api/folders')
+        .send(newItem)
+        .then(function (_res) {
+          console.log(_res);
+          res = _res;
+          expect(res).to.have.status(201);
+          expect(res).to.have.header('location');
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body).to.have.keys('id', 'name', 'createdAt', 'updatedAt');
+          console.log(res.body.id);
+          // 2) then call the database
+          return Folder.findOne({ name: "new folder name" });
+        })
+        // 3) then compare the API response to the database results
+        .then(data => {
+          expect(res.body.id).to.equal(data.id);
+          expect(res.body.name).to.equal(data.name);
+          expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
+          expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
+        })
+        .catch(error => {
+          console.log(error);
+        })
+    });
   });
-});
+  //______________PUT Tests______________
+  describe('PUT /api/folders/:id', () => {
+    it('should update folder you send over, and return with new data', function () {
+      const updatedFolder = {
+        name: "This is an updated folder name",
+      };
 
-//______________DELETE Tests______________
-describe('DELETE api/folders/"id', () => {
-  
-  it('should delete a folder by id', () => {
-    let data;
-    return Folder
-      .findOne()
-      .then(_data => {
-        data = _data;
-        return chai.request(app).delete(`/api/folders/${data.id}`);
-      })
-      .then(res => {
-        expect(res).to.have.status(204);
-        return Folder.findById(data.id);
-      })
-      .then(_data => {
-        expect(_data).to.be.null;
-      });
+      return Folder
+        .findOne()
+        .then(data => {
+          updatedFolder.id = data.id;
+
+          return chai.request(app)
+            .put(`/api/notes/${data.id}`)
+            .send(updatedFolder);
+        })
+        .then((res) => {
+          expect(res).to.have.status(200);
+          expect(res).to.be.json;
+          expect(res.body).to.be.a('object');
+          expect(res.body).to.have.keys('id', 'name', 'createdAt', 'updatedAt');
+          return Folder.findbyId(updatedFolder.id);
+        })
+        .then(data => {
+          expect(updatedFolder.id).to.equal(data.id);
+          expect(updatedFolder.name).to.equal(data.name);
+        });
+    });
   });
+
+  //______________DELETE Tests______________
+  describe('DELETE api/folders/"id', () => {
+
+    it('should delete a folder by id', () => {
+      let data;
+      return Folder
+        .findOne()
+        .then(_data => {
+          data = _data;
+          return chai.request(app).delete(`/api/folders/${data.id}`);
+        })
+        .then(res => {
+          expect(res).to.have.status(204);
+          return Folder.findById(data.id);
+        })
+        .then(_data => {
+          expect(_data).to.be.null;
+        });
+    });
+  })
 });
